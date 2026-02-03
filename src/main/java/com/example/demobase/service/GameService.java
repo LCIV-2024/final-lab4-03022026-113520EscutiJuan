@@ -34,16 +34,30 @@ public class GameService {
     @Transactional
     public GameResponseDTO startGame(Long playerId) {
         GameResponseDTO response = new GameResponseDTO();
-        // TODO: Implementar el método startGame
-        // Validar que el jugador existe
-       
-        // Verificar si ya existe una partida en curso para este jugador y palabra
-        
-        // Marcar la palabra como utilizada
-       
-        // Crear nueva partida en curso
-        
-        return response;
+        // TODO: Implementar el método startGame--Completado
+
+       Player player = playerRepository.findById(playerId)
+               .orElseThrow(() -> new RuntimeException("Jugador no encontrado con id: " +  playerId));
+        Word word = wordRepository.findRandomWord()
+                .orElseThrow(() -> new RuntimeException("No hay palabras disponibles"));
+
+        Optional<GameInProgress> existing = gameInProgressRepository.findByJugadorAndPalabra(playerId, word.getId());
+        if (existing.isPresent()) {
+            return buildResponseFromGameInProgress(existing.get());
+        }
+
+        word.setUtilizada(true);
+        wordRepository.save(word);
+
+        GameInProgress gameInProgress = new GameInProgress();
+        gameInProgress.setJugador(player);
+        gameInProgress.setPalabra(word);
+        gameInProgress.setLetrasIntentadas("");
+        gameInProgress.setIntentosRestantes(MAX_INTENTOS);
+        gameInProgress.setFechaInicio(LocalDateTime.now());
+
+        GameInProgress saved = gameInProgressRepository.save(gameInProgress);
+        return buildResponseFromGameInProgress(saved);
     }
     
     @Transactional
@@ -51,13 +65,17 @@ public class GameService {
         GameResponseDTO response = new GameResponseDTO();
         // TODO: Implementar el método makeGuess
         // Validar que el jugador existe
-
+Player player = playerRepository.findById(playerId)
+        .orElseThrow(()-> new RuntimeException("Jugador no encontrado con id: " +  playerId));
         // Convertir la letra a mayúscula
-        
+        char guess = Character.toUpperCase(letra);
         // Buscar la partida en curso más reciente del jugador
-        
+        List<GameInProgress> games = gameInProgressRepository.findByJugadorIdOrderByFechaInicioDesc(playerId);
+        if (games.isEmpty()) {
+            throw new RuntimeException("No hay partida en curso para el jugador: " + playerId);
+        }
         // Tomar la partida más reciente
-        
+
         // Obtener letras ya intentadas
         
         // Verificar si la letra ya fue intentada
